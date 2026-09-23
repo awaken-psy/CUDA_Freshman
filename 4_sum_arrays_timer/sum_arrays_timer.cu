@@ -14,12 +14,14 @@ void sumArrays(float * a,float * b,float * res,const int size)
     res[i+3]=a[i+3]+b[i+3];
   }
 }
+
 __global__ void sumArraysGPU(float*a,float*b,float*res,int N)
 {
   int i=blockIdx.x*blockDim.x+threadIdx.x;
   if(i < N)
     res[i]=a[i]+b[i];
 }
+
 int main(int argc,char **argv)
 {
   // set up device
@@ -60,6 +62,8 @@ int main(int argc,char **argv)
   iElaps=cpuSecond()-iStart;
   printf("Execution configuration<<<%d,%d>>> Time elapsed %f sec\n",grid.x,block.x,iElaps);
   sumArrays(a_h,b_h,res_h,nElem);
+
+  
 
   checkResult(res_h,res_from_gpu_h,nElem);
   cudaFree(a_d);

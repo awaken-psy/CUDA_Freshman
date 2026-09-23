@@ -3,6 +3,7 @@
 #include "freshman.h"
 
 
+// CPU version: element-wise add, 4 elements per iteration (loop unrolling)
 void sumArrays(float * a,float * b,float * res,const int size)
 {
   for(int i=0;i<size;i+=4)
@@ -13,20 +14,25 @@ void sumArrays(float * a,float * b,float * res,const int size)
     res[i+3]=a[i+3]+b[i+3];
   }
 }
+
+// GPU kernel: each thread processes one element
 __global__ void sumArraysGPU(float*a,float*b,float*res)
 {
-  //int i=threadIdx.x;
+  // Global thread index = block index * block size + thread index within block
   int i=blockIdx.x*blockDim.x+threadIdx.x;
   res[i]=a[i]+b[i];
 }
+
 int main(int argc,char **argv)
 {
   int dev = 0;
   cudaSetDevice(dev);
 
-  int nElem=1<<14;
+  int nElem=1<<14; // 16384 elements
   printf("Vector size:%d\n",nElem);
   int nByte=sizeof(float)*nElem;
+
+  // Host memory allocation
   float *a_h=(float*)malloc(nByte);
   float *b_h=(float*)malloc(nByte);
   float *res_h=(float*)malloc(nByte);
@@ -34,30 +40,40 @@ int main(int argc,char **argv)
   memset(res_h,0,nByte);
   memset(res_from_gpu_h,0,nByte);
 
+  // Device memory allocation
   float *a_d,*b_d,*res_d;
   CHECK(cudaMalloc((float**)&a_d,nByte));
   CHECK(cudaMalloc((float**)&b_d,nByte));
   CHECK(cudaMalloc((float**)&res_d,nByte));
 
+  // Initialize host data
   initialData(a_h,nElem);
   initialData(b_h,nElem);
 
+  // Copy data: Host -> Device
   CHECK(cudaMemcpy(a_d,a_h,nByte,cudaMemcpyHostToDevice));
   CHECK(cudaMemcpy(b_d,b_h,nByte,cudaMemcpyHostToDevice));
 
+  // Execution config: 1024 threads/block, 16384/1024 = 16 blocks
   dim3 block(1024);
   dim3 grid(nElem/block.x);
   sumArraysGPU<<<grid,block>>>(a_d,b_d,res_d);
   printf("Execution configuration<<<%d,%d>>>\n",grid.x,block.x);
 
+  // Copy result back: Device -> Host
   CHECK(cudaMemcpy(res_from_gpu_h,res_d,nByte,cudaMemcpyDeviceToHost));
+
+  // CPU computes the same result for verification
   sumArrays(a_h,b_h,res_h,nElem);
 
   checkResult(res_h,res_from_gpu_h,nElem);
+
+  // Free device memory
   cudaFree(a_d);
   cudaFree(b_d);
   cudaFree(res_d);
 
+  // Free host memory
   free(a_h);
   free(b_h);
   free(res_h);

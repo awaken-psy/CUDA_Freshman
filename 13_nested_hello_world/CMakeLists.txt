@@ -1,0 +1,2 @@
+add_executable(nested_hello_world nested_Hello_World.cu)
+set_target_properties(nested_hello_world PROPERTIES CUDA_SEPARABLE_COMPILATION ON)

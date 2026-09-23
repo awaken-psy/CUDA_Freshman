@@ -28,11 +28,12 @@ __global__ void sumMatrix(float * MatA,float * MatB,float * MatC,int nx,int ny)
     }
 }
 
+
 int main(int argc,char** argv)
 {
   printf("strating...\n");
   initDevice(0);
-  int nx=1<<12;
+  int nx=1<<12;//4096
   int ny=1<<12;
   int nxy=nx*ny;
   int nBytes=nxy*sizeof(float);

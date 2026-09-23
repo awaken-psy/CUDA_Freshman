@@ -29,7 +29,7 @@ __global__ void kernel_4()
 }
 int main()
 {
-    setenv("CUDA_DEVICE_MAX_CONNECTIONS","32",1);
+    _putenv_s("CUDA_DEVICE_MAX_CONNECTIONS","32");
     int dev = 0;
     cudaSetDevice(dev);
     int n_stream=16;

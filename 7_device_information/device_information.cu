@@ -1,5 +1,6 @@
 #include <cuda_runtime.h>
 #include <stdio.h>
+#include <math.h>
 
 int main(int argc,char** argv)
 {
@@ -21,6 +22,7 @@ int main(int argc,char** argv)
     {
         printf("Detected %d CUDA Capable device(s)\n",deviceCount);
     }
+
     int dev=0,driverVersion=0,runtimeVersion=0;
     cudaSetDevice(dev);
     cudaDeviceProp deviceProp;
@@ -35,8 +37,19 @@ int main(int argc,char** argv)
         deviceProp.major,deviceProp.minor);
     printf("  Total amount of global memory:                %.2f GBytes (%llu bytes)\n",
             (float)deviceProp.totalGlobalMem/pow(1024.0,3),deviceProp.totalGlobalMem);
+
+    // CUDA 13 移除了 deviceProp.clockRate，改用 cudaDeviceGetAttribute 查询
+    int clockRate;
+    cudaDeviceGetAttribute(&clockRate, cudaDevAttrClockRate, dev);
     printf("  GPU Clock rate:                               %.0f MHz (%0.2f GHz)\n",
-            deviceProp.clockRate*1e-3f,deviceProp.clockRate*1e-6f);
+            clockRate*1e-3f,clockRate*1e-6f);
+
+    // CUDA 13 移除了 deviceProp.memoryClockRate，改用 cudaDeviceGetAttribute 查询
+    int memClockRate;
+    cudaDeviceGetAttribute(&memClockRate, cudaDevAttrMemoryClockRate, dev);
+    printf("  Memory Clock rate:                             %.0f MHz (%0.2f GHz)\n",
+            memClockRate*1e-3f,memClockRate*1e-6f);
+
     printf("  Memory Bus width:                             %d-bits\n",
             deviceProp.memoryBusWidth);
     if (deviceProp.l2CacheSize)
